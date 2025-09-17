@@ -1,0 +1,7 @@
+{
+  "epochs": 8,
+  "train_images": 36,
+  "val_images": 3,
+  "test_images": 22,
+  "checkpoint": "outputs\\fasterrcnn_squares_cpu.pt"
+}
