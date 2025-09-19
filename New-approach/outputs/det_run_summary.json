@@ -1,7 +1,11 @@
 {
-  "epochs": 8,
-  "train_images": 36,
-  "val_images": 3,
-  "test_images": 22,
-  "checkpoint": "outputs\\fasterrcnn_squares_cpu.pt"
+  "epochs": 6,
+  "train_pairs_used": 80,
+  "val_pairs_used": 50,
+  "test_pairs_used": 50,
+  "fractions": {
+    "train": 0.001,
+    "val": 0.005,
+    "test": 0.005
+  }
 }
