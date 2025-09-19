@@ -10,7 +10,7 @@ def show_prediction(image_tensor, pred, gt=None, score_thr=0.5, save_path=None):
     for b, s in zip(pred["boxes"], pred["scores"]):
         if s < score_thr: continue
         x1,y1,x2,y2 = b.detach().cpu().numpy()
-        ax.add_patch(patches.Rectangle((x1,y1),(x2-x1),(y2-y1),
+        ax.add_patch(patches.Rectangle((x1,y1),(x2-x1),(y2-y1), edgecolor="red",
                                        fill=False, lw=2))
     # ground-truth
     if gt is not None:
