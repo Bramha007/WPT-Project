@@ -65,7 +65,11 @@ def main():
     test_loader  = DataLoader(ds_test,  batch_size=config.BATCH_SIZE, shuffle=False, num_workers=config.NUM_WORKERS, pin_memory=is_cuda)
 
     # --- 4. MODEL, OPTIMIZER, SCHEDULER ---
-    NUM_CLASSES = config.NUM_CLS_CLASSES
+    # CRASH ON FAIL: Hard-code the class count for debugging integrity
+    NUM_CLASSES = config.NUM_CLS_CLASSES 
+    if NUM_CLASSES != 25:
+        raise ValueError(f"CRITICAL ERROR: config_cls.NUM_CLS_CLASSES must be 25, but is {NUM_CLASSES}. Check config_cls.py.")
+
     model = build_resnet_classifier(num_classes=NUM_CLASSES).to(device)
     
     criterion = nn.CrossEntropyLoss()

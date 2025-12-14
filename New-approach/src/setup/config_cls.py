@@ -4,8 +4,14 @@ import os
 
 # --- A. GENERAL SETUP & PATHS (Using absolute paths for Linux stability) ---
 # NOTE: Replace the absolute path below with your confirmed path from the server
+
+if os.name == 'nt':
+    # Windows paths (for local testing)
+    DATA_ROOT = r"E:\WPT-Project\Data\sized_squares_filled"
+elif os.name == 'posix':
+    DATA_ROOT = "/pitsec_sose2025_team3_1/data/sized_squares_filled" # for Linux
 # DATA_ROOT = r"E:\WPT-Project\Data\sized_squares_filled"  # for Windows
-DATA_ROOT = "/pitsec_sose2025_team3_1/data/sized_squares_filled" # for Linux
+# DATA_ROOT = "/pitsec_sose2025_team3_1/data/sized_squares_filled" # for Linux
 
 
 # Output directory for classification results
@@ -17,8 +23,13 @@ IMG_DIR_TRAIN = os.path.join(DATA_ROOT, "train")
 IMG_DIR_VAL = os.path.join(DATA_ROOT, "val")
 XML_DIR_ALL = os.path.join(DATA_ROOT, "annotations")
 
+if os.name == 'nt':
+    # Windows paths (for local testing)
+    RECT_DATA_ROOT = r'E:\WPT-Project\Data\sized_rectangles_filled' # for Windows
+elif os.name == 'posix':
+    RECT_DATA_ROOT = "/pitsec_sose2025_team3_1/data/sized_rectangles_filled" # for Linux
 # RECT_DATA_ROOT = r'E:\WPT-Project\Data\sized_rectangles_filled' # for Windows
-RECT_DATA_ROOT = "/pitsec_sose2025_team3_1/data/sized_rectangles_filled" # for Linux
+# RECT_DATA_ROOT = "/pitsec_sose2025_team3_1/data/sized_rectangles_filled" # for Linux
 IMG_DIR_TEST_RECT  = os.path.join(RECT_DATA_ROOT, 'test')
 XML_DIR_ALL_RECT   = os.path.join(RECT_DATA_ROOT, 'annotations')
 
@@ -72,7 +83,7 @@ NUM_CLS_CLASSES = len(SIZE_CLASS_MAP)
 # F_TRAIN = 1
 # F_VAL = 1
 # F_TEST = 1
-F_TRAIN = 0.5 
-F_VAL   = 0.5
-F_TEST  = 0.5
+F_TRAIN = 0.0005 
+F_VAL   = 0.005
+F_TEST  = 0.005
 MAX_TRAIN_ITEMS = None
