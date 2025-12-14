@@ -57,7 +57,7 @@ AREA_NAMES = [str(a) for a in AREA_BINS]
 NUM_REG_WH = 2
 
 # --- D. DATA SUBSET FRACTIONS ---
-F_TRAIN = 0.0005 
-F_VAL   = 0.005
-F_TEST  = 0.005
+F_TRAIN = 0.5 
+F_VAL   = 0.5
+F_TEST  = 0.5
 MAX_TRAIN_ITEMS = None
