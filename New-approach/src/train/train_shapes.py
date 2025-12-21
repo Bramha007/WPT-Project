@@ -52,7 +52,7 @@ def make_loader(pairs, train=False):
 
 def main():
     # --- 2. SETUP AND DEVICE INITIALIZATION ---
-    os.makedirs(config.OUTPUT_DIR, exist_ok=True)
+    os.makedirs(config.OUTPUT_DIR, exist_ok=True)    
     torch.manual_seed(config.SEED)
 
     # DYNAMIC DEVICE SELECTION: Uses 'auto' from config.py to select CUDA or CPU
@@ -91,6 +91,10 @@ def main():
     # Dynamically get the number of classes (2: Background + Shape Class)
     NUM_CLASSES = GeometricShapeDataset.get_num_classes()
     LATENT_SIZE = config.LATENT_SIZE
+
+    config.OUTPUT_DIR = f"outputs_latent_{LATENT_SIZE}"
+    config.SAVE_CKPT = os.path.join(config.OUTPUT_DIR, "fasterrcnn_best.pt")
+    os.makedirs(config.OUTPUT_DIR, exist_ok=True)
     # Build model using GPU-agnostic function and move to the selected device
     model = build_fasterrcnn(
         num_classes=NUM_CLASSES,
@@ -185,7 +189,8 @@ def main():
         )
 
     # Run summary
-    with open(os.path.join(config.OUTPUT_DIR, "det_run_summary.json"), "w") as f:
+    with open(config.DET_SUMMARY, "w") as f:
+    # with open(os.path.join(config.OUTPUT_DIR, "det_run_summary.json"), "w") as f:
         json.dump(
             {
                 "epochs": config.EPOCHS,

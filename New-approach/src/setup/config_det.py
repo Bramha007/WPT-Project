@@ -15,9 +15,17 @@ elif os.name == "posix":
 # DATA_ROOT = "/pitsec_sose2025_team3_1/data/sized_squares_filled" # for Linux
 
 
-# Output directory for classification results
-OUTPUT_DIR = "outputs_v3"
-SAVE_CKPT = os.path.join(OUTPUT_DIR, "resnet_cls_best.pt")
+# Output directory for quadrilateral detection results
+# Task-level folder
+TASK_DIR = "quad_detection"
+
+# Variation-level folder (The 3 folders for latents)
+LATENT_SIZE = 128  # Change to 512 or 1024 for other runs
+OUTPUT_DIR = os.path.join(TASK_DIR, f"latent_{LATENT_SIZE}")
+
+# File-specific paths
+SAVE_CKPT = os.path.join(OUTPUT_DIR, "fasterrcnn_best.pt")
+DET_SUMMARY = os.path.join(OUTPUT_DIR, "det_run_summary.json")
 
 # Training, Validation, and Annotations paths
 IMG_DIR_TRAIN = os.path.join(DATA_ROOT, "train")
