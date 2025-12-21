@@ -44,14 +44,16 @@ DEVICE      = "auto"
 
 OPTIMIZER_NAME = "SGD" #"AdamW" # Options: "SGD", "AdamW"
 
+LATENT_SIZE = 128  # Size of the latent vector in the Faster R-CNN box head eg 128, 512, 1024
+
 # ====================================================================
 # C. DATA SUBSET FRACTIONS
 # ====================================================================
 
 # Fractions (0.0 to 1.0) to subsample the dataset splits
-F_TRAIN = 0.0005 
-F_VAL   = 0.005
-F_TEST  = 0.005
+F_TRAIN = 0.1 
+F_VAL   = 0.1
+F_TEST  = 0.1
 
 # Hard-cap the training items if the fraction still yields too much data
 MAX_TRAIN_ITEMS = None

@@ -45,19 +45,15 @@ USE_PADDING_CANVAS = True
 OPTIMIZER_NAME = "Adam"
 
 
+
 # --- C. CLASSIFICATION CLASSES (TWO TASKS) ---
-
-# TASK 1: AREA CLASSIFICATION (5 Classes, for Robustness)
-AREA_BINS = [64, 256, 1024, 4096, 16384] 
-NUM_CLS_AREA = len(AREA_BINS) 
-AREA_NAMES = [str(a) for a in AREA_BINS]
-
-# TASK 2: W/H REGRESSION (2 Outputs: W, H)
-# The model will predict 2 continuous values.
-NUM_REG_WH = 2
+# Boundaries are set halfway between square areas (64, 256, 1024, 4096, 16384)
+AREA_BOUNDARIES = [128, 512, 2048, 8192] 
+AREA_NAMES = ["64", "256", "1024", "4096", "16384"]
+NUM_CLS_CLASSES = len(AREA_NAMES)
 
 # --- D. DATA SUBSET FRACTIONS ---
-F_TRAIN = 0.5 
-F_VAL   = 0.5
-F_TEST  = 0.5
+F_TRAIN = 0.0005*2 
+F_VAL   = 0.005
+F_TEST  = 0.005
 MAX_TRAIN_ITEMS = None

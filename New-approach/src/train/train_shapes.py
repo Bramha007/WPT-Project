@@ -90,10 +90,11 @@ def main():
     # --- 4. MODEL, OPTIMIZER, SCHEDULER ---
     # Dynamically get the number of classes (2: Background + Shape Class)
     NUM_CLASSES = GeometricShapeDataset.get_num_classes()
-
+    LATENT_SIZE = config.LATENT_SIZE
     # Build model using GPU-agnostic function and move to the selected device
     model = build_fasterrcnn(
         num_classes=NUM_CLASSES,
+        latent_dim=LATENT_SIZE,
     ).to(device)
 
     params = [p for p in model.parameters() if p.requires_grad]

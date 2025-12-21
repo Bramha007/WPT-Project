@@ -1,92 +1,52 @@
+import torch
+import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms as T
-from typing import List, Tuple
 from .voc_parser import parse_voc
-from src.setup.new_config_cls import AREA_BINS
-import torch
+from src.setup import new_config_cls as config
 
 class GeometricShapeClassificationDatasetStream(Dataset):
-    """
-    Dataset for Multi-Task Classification (Area) + Regression (W/H).
-    Returns a sample: (image_tensor, y_area_id, y_wh_target_tensor).
-    """
-    def __init__(self, pairs: List[Tuple[str,str]], canvas=224, train=True,
-                 use_padding_canvas=True, margin_px=16):
-        self.canvas = canvas
+    def __init__(self, pairs, train=True):
+        self.pairs = pairs
         self.train = train
-        self.use_padding_canvas = use_padding_canvas
-        self.margin_px = margin_px
-
         self.index = []  
-        
+
         for img_path, xml_path in pairs:
             rec = parse_voc(xml_path)
-            W_img, H_img = rec["width"], rec["height"]
-            
-            if "labels_wxh_str" not in rec or len(rec["labels_wxh_str"]) == 0:
-                continue
+            for (x1, y1, x2, y2) in rec["boxes"]:
+                area = (x2 - x1) * (y2 - y1)
+                label_id = self._area_to_class(area)
+                self.index.append((img_path, x1, y1, x2, y2, label_id))
 
-            for (x1, y1, x2, y2), wxh_str in zip(rec["boxes"], rec["labels_wxh_str"]):
-                
-                box_w = x2 - x1
-                box_h = y2 - y1
-                area = box_w * box_h 
-                
-                # LABEL: Area Class ID (0-4)
-                y_area_id = self._area_to_class(area)
-                
-                # TARGET: W and H in pixels
-                # Using the raw box dimensions (W, H) as the regression target
-                self.index.append((img_path, x1, y1, x2, y2, y_area_id, box_w, box_h, W_img, H_img))
+        self.transform = T.Compose([
+            T.ToTensor(),
+            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
 
-
-        # AUGMENTATION PIPELINE (Synthetic Rectangles)
-        tfms = [T.ToTensor(), T.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])]
-        
-        if train:
-            geom_tfms = [
-                T.RandomAffine(
-                    degrees=45,         
-                    shear=[-20, 20],    
-                    scale=(0.8, 1.2)    
-                ),
-                T.RandomHorizontalFlip() 
-            ]
-            tfms = geom_tfms + tfms
-            
-        self.transform = T.Compose(tfms)
-        
-        print(f"DEBUG: Dataset initialization finished. Total items in dataset: {len(self.index)}")
-
-
-    def __len__(self):
-        return len(self.index)
+    def __len__(self): return len(self.index)
 
     def __getitem__(self, idx):
-        # Retrieving the image, Area label, and W/H targets
-        img_path, x1, y1, x2, y2, y_area_id, box_w, box_h, W_img, H_img = self.index[idx]
+        img_path, x1, y1, x2, y2, label_id = self.index[idx]
         img = Image.open(img_path).convert("RGB")
+        crop = img.crop((x1, y1, x2, y2))
 
-        # --- Object Cropping Logic (unchanged) ---
-        if self.use_padding_canvas:
-            crop = img.crop((x1, y1, x2, y2))
-            canvas = Image.new("RGB", (self.canvas, self.canvas), (255,255,255))
-            ox = (self.canvas - crop.size[0]) // 2
-            oy = (self.canvas - crop.size[1]) // 2
-            canvas.paste(crop, (ox, oy))
-            sample_img = canvas
-        else:
-            # ... (cropping with margin) ...
-            pass
-            
-        # Create the W/H target tensor [W, H]
-        y_wh_target = torch.tensor([box_w, box_h], dtype=torch.float32)
-            
-        # Return the transformed image, the Area Classification ID, and the W/H Regression Target
-        return self.transform(sample_img), y_area_id, y_wh_target
+        # --- DYNAMIC RECTANGLE SYNTHESIS ---
+        if self.train:
+            w, h = crop.size
+            # Randomly distort aspect ratio between 0.5 (tall) and 2.0 (wide)
+            ar = np.random.uniform(0.5, 2.0)
+            new_w, new_h = int(w * ar), int(h / ar)
+            # Clip to ensure the synthesized shape fits the 224x224 canvas
+            new_w, new_h = min(max(new_w, 8), 200), min(max(new_h, 8), 200)
+            crop = crop.resize((new_w, new_h), Image.BILINEAR)
+
+        canvas = Image.new("RGB", (config.CANVAS_SIZE, config.CANVAS_SIZE), (255, 255, 255))
+        canvas.paste(crop, ((config.CANVAS_SIZE - crop.size[0]) // 2, (config.CANVAS_SIZE - crop.size[1]) // 2))
+        return self.transform(canvas), label_id
 
     @staticmethod
-    def _area_to_class(area: int) -> int:
-        bins = AREA_BINS 
-        return min(range(len(bins)), key=lambda i: abs(area - bins[i]))
+    def _area_to_class(area):
+        for i, b in enumerate(config.AREA_BOUNDARIES):
+            if area < b: return i
+        return len(config.AREA_BOUNDARIES)
