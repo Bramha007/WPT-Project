@@ -92,8 +92,8 @@ def main():
     NUM_CLASSES = GeometricShapeDataset.get_num_classes()
     LATENT_SIZE = config.LATENT_SIZE
 
-    config.OUTPUT_DIR = f"outputs_latent_{LATENT_SIZE}"
-    config.SAVE_CKPT = os.path.join(config.OUTPUT_DIR, "fasterrcnn_best.pt")
+    # config.OUTPUT_DIR = f"outputs_latent_{LATENT_SIZE}"
+    # config.SAVE_CKPT = os.path.join(config.OUTPUT_DIR, "fasterrcnn_best.pt")
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
     # Build model using GPU-agnostic function and move to the selected device
     model = build_fasterrcnn(
