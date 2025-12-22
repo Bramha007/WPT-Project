@@ -20,7 +20,7 @@ elif os.name == "posix":
 TASK_DIR = "quad_detection"
 
 # Variation-level folder (The 3 folders for latents)
-LATENT_SIZE = 128  # Change to 512 or 1024 for other runs
+LATENT_SIZE = 256  # Change to 512 or 1024 for other runs
 OUTPUT_DIR = os.path.join(TASK_DIR, f"latent_{LATENT_SIZE}")
 
 # File-specific paths
@@ -60,9 +60,9 @@ DEVICE = "auto"
 
 OPTIMIZER_NAME = "SGD"  # "AdamW" # Options: "SGD", "AdamW"
 
-LATENT_SIZE = (
-    128  # Size of the latent vector in the Faster R-CNN box head eg 128, 512, 1024
-)
+# LATENT_SIZE = (
+#     512  # Size of the latent vector in the Faster R-CNN box head eg 128, 512, 1024
+# )
 
 # ====================================================================
 # C. DATA SUBSET FRACTIONS

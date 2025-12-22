@@ -90,7 +90,8 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
             image_tensor=img_tensor,
             pred=pred,
             gt=target_dict,
-            score_thr=0.3, 
+            score_thr=0.7, 
+            # score_thr=0.3, 
             save_path=output_image_path
         )
 
