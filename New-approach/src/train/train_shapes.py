@@ -1,5 +1,3 @@
-# File: train_shapes.py (Refactored for Modularity and CUDA)
-
 import os, time, json
 import numpy as np
 import torch
