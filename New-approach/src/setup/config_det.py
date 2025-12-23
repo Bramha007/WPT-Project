@@ -20,7 +20,7 @@ elif os.name == "posix":
 TASK_DIR = "quad_detection"
 
 # Variation-level folder (The 3 folders for latents)
-LATENT_SIZE = 512  # Change to 512 or 1024 for other runs
+LATENT_SIZE = '1024_n'  # Change to 256, 512, or 1024 for other runs
 OUTPUT_DIR = os.path.join(TASK_DIR, f"latent_{LATENT_SIZE}")
 
 # File-specific paths
@@ -69,13 +69,13 @@ OPTIMIZER_NAME = "SGD"  # "AdamW" # Options: "SGD", "AdamW"
 # ====================================================================
 
 # Fractions (0.0 to 1.0) to subsample the dataset splits
-# F_TRAIN = 0.0005
-# F_VAL = 0.002
-# F_TEST = 0.002
+F_TRAIN = 0.0005
+F_VAL = 0.002
+F_TEST = 0.002
 
-F_TRAIN = 0.1
-F_VAL = 0.1
-F_TEST = 0.1
+# F_TRAIN = 0.1
+# F_VAL = 0.1
+# F_TEST = 0.1
 
 # Hard-cap the training items if the fraction still yields too much data
 MAX_TRAIN_ITEMS = None

@@ -10,4 +10,4 @@ yolov8n.pt
 
 results_linux/
 
-quad_detection/*
+quad_detection/

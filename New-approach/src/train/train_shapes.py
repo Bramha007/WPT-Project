@@ -15,7 +15,7 @@ from src.dataio.det_transforms import (
     RandomHorizontalFlip,
     ClampBoxes,
 )
-from src.models.fasterrcnn import build_fasterrcnn  # GPU-agnostic model builder
+from src.models.fasterrcnn import build_fasterrcnn, build_fasterrcnn_  # GPU-agnostic model builder
 from src.utils.metrics_det import evaluate_ap_by_size
 from src.dataio.split_utils import subsample_pairs
 
@@ -94,9 +94,9 @@ def main():
     # config.SAVE_CKPT = os.path.join(config.OUTPUT_DIR, "fasterrcnn_best.pt")
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
     # Build model using GPU-agnostic function and move to the selected device
-    model = build_fasterrcnn(
+    model = build_fasterrcnn_(
         num_classes=NUM_CLASSES,
-        latent_dim=LATENT_SIZE,
+        # latent_dim=LATENT_SIZE,
     ).to(device)
 
     params = [p for p in model.parameters() if p.requires_grad]
