@@ -75,17 +75,22 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
 
     # 3. LOAD THE MODEL
     print(f"Loading model from: {config_det.SAVE_CKPT}")
-    num_classes = GeometricShapeDataset.get_num_classes() # Get class count dynamically
+    # num_classes = GeometricShapeDataset.get_num_classes() # Get class count dynamically
     
-    # Use the GPU-agnostic model builder
+    # # Use the GPU-agnostic model builder
+    # model = build_fasterrcnn(num_classes=num_classes).to(device)
+
+    num_classes = GeometricShapeDataset.get_num_classes()
     model = build_fasterrcnn(num_classes=num_classes).to(device)
 
     if not os.path.exists(config_det.SAVE_CKPT):
         print(f"ERROR: Checkpoint file not found at {config_det.SAVE_CKPT}. Please run training first.")
         return
 
+    # model.load_state_dict(torch.load(config_det.SAVE_CKPT, map_location=device))
+    # model.eval() 
     model.load_state_dict(torch.load(config_det.SAVE_CKPT, map_location=device))
-    model.eval() 
+    model.eval()    
 
     # 4. ITERATE, PREDICT, AND SAVE
     print(f"\nStarting inference and saving visualizations to {output_viz_dir}...")
@@ -109,12 +114,19 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         output_image_path = os.path.join(output_viz_dir, output_filename)
         
         # Visualize and Save (using the function from viz.py)
+        # show_prediction(
+        #     image_tensor=img_tensor, 
+        #     pred=pred, 
+        #     gt=target_dict, 
+        #     score_thr=0.7, 
+        #     save_path=output_image_path 
+        # )
         show_prediction(
-            image_tensor=img_tensor, 
-            pred=pred, 
-            gt=target_dict, 
-            score_thr=0.7, 
-            save_path=output_image_path 
+            image_tensor=img_tensor,
+            pred=pred,
+            gt=target_dict,
+            score_thr=0.7, # Use 0.7 for clean, confident results
+            save_path=output_image_path
         )
 
     print(f"\n✅ Visualizations complete. Saved to: {output_viz_dir}")

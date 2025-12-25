@@ -11,10 +11,12 @@ DATA_ROOT = r"E:\WPT-Project\Data\sized_squares_filled"
 # DATA_ROOT = "/pitsec_sose2025_team3_1/data/sized_squares_filled" # for Linux
 
 # Output directory for checkpoints and metrics
-OUTPUT_DIR = "outputs_v2"
-# Checkpoint save path (uses os.path.join for cross-platform compatibility)
-SAVE_CKPT = os.path.join(OUTPUT_DIR, "fasterrcnn_shapes_final.pt")
-
+# OUTPUT_DIR = "outputs_v2"
+# # Checkpoint save path (uses os.path.join for cross-platform compatibility)
+# SAVE_CKPT = os.path.join(OUTPUT_DIR, "fasterrcnn_shapes_final.pt")
+TASK_DIR = "quad_detection"
+OUTPUT_DIR = os.path.join(TASK_DIR, "standard_baseline") # Label clearly
+SAVE_CKPT = os.path.join(OUTPUT_DIR, "fasterrcnn_standard.pt")
 # Training, Validation, and Annotations paths for the SQUARES dataset
 IMG_DIR_TRAIN = os.path.join(DATA_ROOT, "train")
 IMG_DIR_VAL   = os.path.join(DATA_ROOT, "val")
@@ -49,7 +51,7 @@ OPTIMIZER_NAME = "SGD" #"AdamW" # Options: "SGD", "AdamW"
 # ====================================================================
 
 # Fractions (0.0 to 1.0) to subsample the dataset splits
-F_TRAIN = 0.001 
+F_TRAIN = 0.0005 
 F_VAL   = 0.005
 F_TEST  = 0.005
 
