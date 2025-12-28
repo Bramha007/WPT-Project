@@ -30,39 +30,37 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHe
 
 
 def build_fasterrcnn_(num_classes, latent_dim=1024):
-
     """
-
     Builds Faster R-CNN with a customizable latent vector (representation_size).
-
     """
-
     # Load model with FPN backbone
-
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT")
-
-
-
     # 1. Identify input features from the backbone
-
     # Default for ResNet50-FPN is 12544 (7x7 x 256)
-
     in_channels = model.roi_heads.box_head.fc6.in_features
-
-
-
     # 2. VARIATION: Replace the Box Head with custom latent_dim
-
     # This 'representation_size' is your latent vector size.
-
     model.roi_heads.box_head = TwoMLPHead(in_channels, latent_dim)
-
-
-
     # 3. Replace the predictor to match the new latent_dim
-
     model.roi_heads.box_predictor = FastRCNNPredictor(latent_dim, num_classes)
-
-
-
     return model
+
+#  def build_fasterrcnn_(num_classes, latent_dim=1024):
+# #     """
+# #     Builds Faster R-CNN with a customizable latent vector (representation_size).
+# #     """
+# #     # Load model with FPN backbone
+# #     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT")
+
+# #     # 1. Identify input features from the backbone
+# #     # Default for ResNet50-FPN is 12544 (7x7 x 256)
+# #     in_channels = model.roi_heads.box_head.fc6.in_features
+
+# #     # 2. VARIATION: Replace the Box Head with custom latent_dim
+# #     # This 'representation_size' is your latent vector size.
+# #     model.roi_heads.box_head = TwoMLPHead(in_channels, latent_dim)
+
+# #     # 3. Replace the predictor to match the new latent_dim
+# #     model.roi_heads.box_predictor = FastRCNNPredictor(latent_dim, num_classes)
+
+# #     return model
