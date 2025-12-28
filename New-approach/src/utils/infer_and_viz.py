@@ -11,7 +11,7 @@ from src.dataio.voc_parser import paired_image_xml_list
 from src.dataio.det_dataset import GeometricShapeDataset, collate_fn
 from src.dataio.det_transforms import Compose, ToTensor
 from src.dataio.split_utils import subsample_pairs
-from src.models.fasterrcnn import build_fasterrcnn, build_fasterrcnn_
+from src.models.fasterrcnn import build_fasterrcnn_
 
 @torch.inference_mode()
 def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | None = 10):
@@ -63,8 +63,9 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         return
 
     print(f"Loading weights from: {checkpoint_path}")
-    # model = build_fasterrcnn(num_classes=NUM_CLASSES, latent_dim=latent_dim).to(device)
-    model = build_fasterrcnn_(num_classes=NUM_CLASSES).to(device)
+    latent_dim = config_det.LATENT_SIZE
+    model = build_fasterrcnn_(num_classes=NUM_CLASSES, latent_dim=latent_dim).to(device)
+    # model = build_fasterrcnn_(num_classes=NUM_CLASSES).to(device)
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
 
@@ -91,7 +92,7 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
             image_tensor=img_tensor,
             pred=pred,
             gt=target_dict,
-            score_thr=0.5, 
+            score_thr=0.7, 
             # score_thr=0.3, 
             save_path=output_image_path
         )

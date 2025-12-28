@@ -15,7 +15,7 @@ from src.dataio.det_transforms import (
     RandomHorizontalFlip,
     ClampBoxes,
 )
-from src.models.fasterrcnn import build_fasterrcnn, build_fasterrcnn_  # GPU-agnostic model builder
+from src.models.fasterrcnn import build_fasterrcnn_  # GPU-agnostic model builder
 from src.utils.metrics_det import evaluate_ap_by_size
 from src.dataio.split_utils import subsample_pairs
 
@@ -96,7 +96,7 @@ def main():
     # Build model using GPU-agnostic function and move to the selected device
     model = build_fasterrcnn_(
         num_classes=NUM_CLASSES,
-        # latent_dim=LATENT_SIZE,
+        latent_dim=LATENT_SIZE,
     ).to(device)
 
     params = [p for p in model.parameters() if p.requires_grad]
@@ -122,6 +122,11 @@ def main():
         opt, step_size=max(1, config.EPOCHS // 2), gamma=0.1
     )
 
+    # --- EARLY STOPPING CONFIGURATION ---
+    patience = 4             # Number of epochs to wait for improvement
+    min_delta = 0.001        # Minimum change to qualify as an improvement
+    patience_counter = 0     # Internal counter
+    best_val_ap = -1.0       # Track the best score
     # --- 5. TRAINING LOOP (CRUCIAL CUDA TRANSFERS) ---
     best_val_ap = -1.0
     for ep in range(config.EPOCHS):
@@ -158,10 +163,27 @@ def main():
         print(
             f"Epoch {ep+1}: loss={np.mean(losses):.4f} | val AP@0.5={val_ap:.3f} | {time.time()-t0:.1f}s"
         )
-        if val_ap > best_val_ap:
+
+        # --- EARLY STOPPING LOGIC ---
+    # Check if current val_ap is better than best_val_ap by at least min_delta
+        if val_ap > (best_val_ap + min_delta):
             best_val_ap = val_ap
+            patience_counter = 0  # Reset counter because we found an improvement
             torch.save(model.state_dict(), config.SAVE_CKPT)
+            print(f"  ✓ Improvement found! Saving best model.")
             print(f"  ✓ saved best → {config.SAVE_CKPT}")
+
+        else:
+            patience_counter += 1
+            print(f"  × No significant improvement. Patience: {patience_counter}/{patience}")
+
+        # Break the training loop if patience is exceeded
+        if patience_counter >= patience:
+            print(f"\n[TERMINATE] Early stopping triggered. Accuracy stayed in range for {patience} epochs.")
+            break
+        
+
+        
 
     # --- 7. FINAL EVALUATION (SQUARES AND RECTANGLES) ---
     model.load_state_dict(torch.load(config.SAVE_CKPT, map_location=device))
