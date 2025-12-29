@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from captum.attr import IntegratedGradients, visualization as viz
 
 from src.setup import config_det as config
+from src.utils.device_utils import select_device 
 from src.models.fasterrcnn import build_fasterrcnn_
 from src.dataio.det_dataset import GeometricShapeDataset, collate_fn
 from src.dataio.voc_parser import paired_image_xml_list
@@ -14,7 +15,8 @@ from src.dataio.split_utils import subsample_pairs
 from src.dataio.det_transforms import Compose, ToTensor
 
 def run_xai_on_test_set(limit=None):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = select_device(config.DEVICE)
+    torch.manual_seed(config.SEED)
     xai_out_dir = os.path.join(config.OUTPUT_DIR, "xai_results")
     os.makedirs(xai_out_dir, exist_ok=True)
 
@@ -25,10 +27,13 @@ def run_xai_on_test_set(limit=None):
     model.eval()
 
     # 2. Prepare Data
-    test_pairs = subsample_pairs(
-        paired_image_xml_list(config.IMG_DIR_TEST_RECT, config.XML_DIR_ALL_RECT), 
-        config.F_TEST, seed=config.SEED
+    
+    test_pairs_all = paired_image_xml_list(
+        config.IMG_DIR_TEST_RECT, config.XML_DIR_ALL_RECT
     )
+    test_pairs = subsample_pairs(test_pairs_all, config.F_TEST, seed=config.SEED)
+
+
     ds = GeometricShapeDataset(test_pairs, transforms=Compose([ToTensor()]))
     loader = DataLoader(ds, batch_size=1, shuffle=False, collate_fn=collate_fn)
 
@@ -73,4 +78,4 @@ def run_xai_on_test_set(limit=None):
         plt.close(fig)
 
 if __name__ == "__main__":
-    run_xai_on_test_set(limit=1)
+    run_xai_on_test_set(limit=10)
