@@ -35,7 +35,16 @@ def run_xai_on_test_set(limit=None):
 
 
     ds = GeometricShapeDataset(test_pairs, transforms=Compose([ToTensor()]))
-    loader = DataLoader(ds, batch_size=1, shuffle=False, collate_fn=collate_fn)
+    # loader = DataLoader(ds, batch_size=1, shuffle=False, collate_fn=collate_fn)
+    loader =  DataLoader(
+        ds,
+        batch_size=config.BATCH_SIZE,
+        # shuffle=train and len(pairs) > 1,
+        shuffle=False,
+        num_workers=config.NUM_WORKERS,
+        collate_fn=collate_fn,
+        # pin_memory=is_cuda,  # Pin memory dramatically speeds up host-to-device transfers
+    )
 
     # 3. Define Wrapper for Captum
     def wrapper_func(input_tensor):
