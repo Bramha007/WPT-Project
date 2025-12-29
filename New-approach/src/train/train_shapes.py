@@ -123,7 +123,7 @@ def main():
     )
 
     # --- EARLY STOPPING CONFIGURATION ---
-    patience = 4             # Number of epochs to wait for improvement
+    patience = 2             # Number of epochs to wait for improvement
     min_delta = 0.001        # Minimum change to qualify as an improvement
     patience_counter = 0     # Internal counter
     best_val_ap = -1.0       # Track the best score
