@@ -174,11 +174,15 @@ def run_proper_xai(limit=20):
             )
             
             # Prepare for Visualization
-            # We detach here because visualization doesn't need the graph
+            # # We detach here because visualization doesn't need the graph
+            # attr_np = np.transpose(attr.squeeze().cpu().detach().numpy(), (1, 2, 0))
+            # img_np = np.transpose(imgs[0].cpu().detach().numpy(), (1, 2, 0))
+
+            # Updated visualizer call as per Captum 0.6.0+
             attr_np = np.transpose(attr.squeeze().cpu().detach().numpy(), (1, 2, 0))
             img_np = np.transpose(imgs[0].cpu().detach().numpy(), (1, 2, 0))
 
-            # Updated visualizer call as per Captum 0.6.0+
+            # 5. Visualizer call with LIGHTER background
             fig, _ = viz.visualize_image_attr(
                 attr_np, 
                 img_np, 
@@ -186,7 +190,10 @@ def run_proper_xai(limit=20):
                 sign="all", 
                 show_colorbar=True,
                 title=f"XAI for ID: {img_id}",
-                use_pyplot=False
+                use_pyplot=False,
+                # REDUCE alpha_overlay to make the background shapes lighter
+                # 0.1 to 0.3 usually makes the heatmap colors "pop"
+                alpha_overlay=0.2 
             )
             
             fig.savefig(os.path.join(xai_out_dir, save_name))
