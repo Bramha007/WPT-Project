@@ -38,13 +38,33 @@ def run_proper_xai(limit=20):
     ds = GeometricShapeDataset(test_pairs, transforms=Compose([ToTensor()]))
     loader = DataLoader(ds, batch_size=1, shuffle=False, collate_fn=collate_fn)
 
-    # 3. Enhanced Wrapper: Ensure we explain high-confidence boxes
+    model.eval() 
+
     def wrapper_func(input_tensor):
+        # CRITICAL: Faster R-CNN must run in a way that preserves gradients
+        # We use a list of images as expected by the model
         outputs = model(list(input_tensor))
+        
+        # Identify the score you want to explain
         if len(outputs[0]['scores']) > 0:
-            # We explain the top-scoring box
-            return outputs[0]['scores'][0].view(1, 1) 
-        return torch.zeros((1, 1), device=device)
+            # DO NOT use .item() or .detach() here.
+            # Use .view() or .unsqueeze() to keep it as a 2D tensor
+            score = outputs[0]['scores'][0]
+            return score.unsqueeze(0).unsqueeze(0) # Returns shape [1, 1]
+        
+        return torch.tensor([[0.0]], device=device, requires_grad=True)
+
+    # 2. Ensure input_img is ready for gradients
+    input_img = imgs[0].to(device).unsqueeze(0)
+    input_img.requires_grad = True # Must be set BEFORE calling ig.attribute
+
+    # 3. Enhanced Wrapper: Ensure we explain high-confidence boxes
+    # def wrapper_func(input_tensor):
+    #     outputs = model(list(input_tensor))
+    #     if len(outputs[0]['scores']) > 0:
+    #         # We explain the top-scoring box
+    #         return outputs[0]['scores'][0].view(1, 1) 
+    #     return torch.zeros((1, 1), device=device)
 
     ig = IntegratedGradients(wrapper_func)
 
