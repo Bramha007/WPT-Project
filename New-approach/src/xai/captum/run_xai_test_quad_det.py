@@ -123,7 +123,7 @@ def run_proper_xai(limit=20):
             fig, _ = viz.visualize_image_attr(
                 attr_np_clean,
                 img_np_light,
-                method="blended_heat_map", # Blended helps colors stand out
+                method="heat_map", # Blended helps colors stand out
                 sign="all",                # Show both Positive (Green) and Negative (Red)
                 show_colorbar=True,
                 title=f"High-Contrast XAI: {img_id}",
