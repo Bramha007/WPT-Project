@@ -182,9 +182,10 @@ def run_proper_xai(limit=20):
             attr_np = np.transpose(attr.squeeze().cpu().detach().numpy(), (1, 2, 0))
             img_np = np.transpose(imgs[0].cpu().detach().numpy(), (1, 2, 0))
 
-            attr_np_boosted = attr_np / (np.max(np.abs(attr_np)) + 1e-9)
+            max_val = np.max(np.abs(attr_np)) + 1e-9
+            attr_np_boosted = attr_np / max_val
 
-            img_np_light = img_np * 0.1 + 0.9
+            img_np_light = img_np * 0.05 + 0.95            
             # attr_np = np.transpose(attr.squeeze().cpu().detach().numpy(), (1, 2, 0))
             # img_np = np.transpose(imgs[0].cpu().detach().numpy(), (1, 2, 0))
             # attr_np_boosted = attr_np / (np.max(np.abs(attr_np)) + 1e-9)
@@ -209,12 +210,11 @@ def run_proper_xai(limit=20):
                 method="blended_heat_map", 
                 sign="all", 
                 show_colorbar=True,
-                title=f"XAI for ID: {img_id}",
+                title=f"High-Contrast XAI: {img_id}",
                 use_pyplot=False,
-                # Setting alpha very low (0.05) makes the shape almost transparent,
-                # letting the Red/Green glow dominate the visual
-                alpha_overlay=0.05, 
-                # Outlier_perc pushes the color scale to be more aggressive
+                # Minimal alpha ensures attribution colors pop
+                alpha_overlay=0.1, 
+                # Outlier clipping brightens the overall heat map
                 outlier_perc=2 
             )
             # 5. Visualizer call with LIGHTER background
@@ -231,7 +231,7 @@ def run_proper_xai(limit=20):
             #     alpha_overlay=0.2 
             # )
             
-            fig.savefig(os.path.join(xai_out_dir, save_name))
+            fig.savefig(os.path.join(xai_out_dir, f"xai_hc_{img_id}.png"))
             plt.close(fig)
 
         except Exception as e:
