@@ -181,23 +181,42 @@ def run_proper_xai(limit=20):
             # Updated visualizer call as per Captum 0.6.0+
             attr_np = np.transpose(attr.squeeze().cpu().detach().numpy(), (1, 2, 0))
             img_np = np.transpose(imgs[0].cpu().detach().numpy(), (1, 2, 0))
+
             attr_np_boosted = attr_np / (np.max(np.abs(attr_np)) + 1e-9)
 
+            img_np_light = img_np * 0.1 + 0.9
+            # attr_np = np.transpose(attr.squeeze().cpu().detach().numpy(), (1, 2, 0))
+            # img_np = np.transpose(imgs[0].cpu().detach().numpy(), (1, 2, 0))
+            # attr_np_boosted = attr_np / (np.max(np.abs(attr_np)) + 1e-9)
+
+            # fig, _ = viz.visualize_image_attr(
+            #     attr_np_boosted, 
+            #     img_np, 
+            #     method="blended_heat_map", 
+            #     sign="all", 
+            #     show_colorbar=True,
+            #     title=f"XAI for ID: {img_id}",
+            #     use_pyplot=False,
+            #     # Low alpha (0.1) makes the background shapes very light
+            #     alpha_overlay=0.1, 
+            #     # outlier_perc=2 removes the top 2% of extreme values, 
+            #     # which effectively brightens the rest of the heatmap
+            #     outlier_perc=2 
+            # )
             fig, _ = viz.visualize_image_attr(
                 attr_np_boosted, 
-                img_np, 
+                img_np_light, 
                 method="blended_heat_map", 
                 sign="all", 
                 show_colorbar=True,
                 title=f"XAI for ID: {img_id}",
                 use_pyplot=False,
-                # Low alpha (0.1) makes the background shapes very light
-                alpha_overlay=0.1, 
-                # outlier_perc=2 removes the top 2% of extreme values, 
-                # which effectively brightens the rest of the heatmap
+                # Setting alpha very low (0.05) makes the shape almost transparent,
+                # letting the Red/Green glow dominate the visual
+                alpha_overlay=0.05, 
+                # Outlier_perc pushes the color scale to be more aggressive
                 outlier_perc=2 
             )
-
             # 5. Visualizer call with LIGHTER background
             # fig, _ = viz.visualize_image_attr(
             #     attr_np, 
