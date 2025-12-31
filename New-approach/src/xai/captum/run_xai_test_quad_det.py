@@ -235,16 +235,34 @@ def run_proper_xai(limit=20):
             attr_np = np.transpose(attr.squeeze().cpu().detach().numpy(), (1, 2, 0))
             attr_np_boosted = np.sign(attr_np) * (np.abs(attr_np) ** 0.4)
             img_np_light = np.ones_like(attr_np_boosted) * 0.98
+            attr_np = np.transpose(attr.squeeze().cpu().detach().numpy(), (1, 2, 0))
+            # Absolute values for thresholding
+            abs_attr = np.abs(attr_np)
+            # Keep only strong attributions (top 10%)
+            threshold = np.percentile(abs_attr, 90)
+            # Zero out weak attributions → neutral background
+            attr_np_clean = np.where(abs_attr >= threshold, attr_np, 0.0)
+            # fig, _ = viz.visualize_image_attr(
+            #     attr_np_boosted,
+            #     img_np_light,
+            #     method="heat_map",
+            #     sign="positive",
+            #     cmap="seismic",
+            #     show_colorbar=True,
+            #     title=f"High-Visibility XAI: {img_id}",
+            #     use_pyplot=False,
+            #     outlier_perc=1,
+            # )
+
             fig, _ = viz.visualize_image_attr(
-                attr_np_boosted,
+                attr_np_clean,
                 img_np_light,
                 method="heat_map",
                 sign="positive",
                 cmap="seismic",
                 show_colorbar=True,
-                title=f"High-Visibility XAI: {img_id}",
+                title=f"Clean XAI: {img_id}",
                 use_pyplot=False,
-                outlier_perc=1,
             )
 
             fig.savefig(os.path.join(xai_out_dir, f"xai_hc_{img_id}.png"))
