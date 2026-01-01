@@ -301,6 +301,7 @@ def run_proper_xai(limit=20):
         white_baseline = torch.ones_like(input_img).to(device)
 
         try:
+            torch.cuda.empty_cache()
             # IG
             attr = ig.attribute(
                 input_img,
