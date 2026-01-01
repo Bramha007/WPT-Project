@@ -69,7 +69,7 @@ OPTIMIZER_NAME = "SGD"  # "AdamW" # Options: "SGD", "AdamW"
 # ====================================================================
 
 # Fractions (0.0 to 1.0) to subsample the dataset splits
-F_TRAIN = 0.0005*4
+F_TRAIN = 0.0005*10
 F_VAL = 0.002
 F_TEST = 0.002
 
