@@ -224,7 +224,7 @@ from src.dataio.split_utils import subsample_pairs
 from src.dataio.det_transforms import Compose, ToTensor
 
 
-def run_proper_xai(limit=20):
+def run_proper_xai(limit):
     # --------------------------------------------------
     # 0. Cleanup
     # --------------------------------------------------
