@@ -379,4 +379,4 @@ def run_proper_xai(limit=20):
 
 
 if __name__ == "__main__":
-    run_proper_xai(limit=20)
+    run_proper_xai(limit=50)
