@@ -326,21 +326,38 @@ def run_proper_xai(limit=20):
             attr_np[abs_attr < thresh] = 0.0
 
             # Pure neutral background
-            bg = np.ones_like(attr_np) * 0.98
+            # bg = np.ones_like(attr_np) * 0.98
 
-            # --------------------------------------------------
-            # 6. Visualize
-            # --------------------------------------------------
+            attr_np_vis = attr_np.copy()
+            attr_np_vis[attr_np_vis == 0] = np.nan
+
+            # Light gray background
+            bg = np.ones_like(attr_np_vis) * 0.95
+
             fig, ax = viz.visualize_image_attr(
-                attr_np,
+                attr_np_vis,
                 bg,
                 method="heat_map",
                 sign="positive",
-                cmap="seismic",
+                cmap="RdYlBu_r",
                 show_colorbar=True,
                 title=f"XAI (all detections): {img_id}",
                 use_pyplot=False
             )
+
+            # --------------------------------------------------
+            # 6. Visualize
+            # --------------------------------------------------
+            # fig, ax = viz.visualize_image_attr(
+            #     attr_np,
+            #     bg,
+            #     method="heat_map",
+            #     sign="positive",
+            #     cmap="seismic",
+            #     show_colorbar=True,
+            #     title=f"XAI (all detections): {img_id}",
+            #     use_pyplot=False
+            # )
 
             # --------------------------------------------------
             # 7. Overlay detected bounding boxes
