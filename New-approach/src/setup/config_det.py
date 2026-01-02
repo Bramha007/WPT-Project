@@ -20,7 +20,7 @@ elif os.name == "posix":
 TASK_DIR = "quad_detection"
 
 # Variation-level folder (The 3 folders for latents)
-LATENT_SIZE = 256  # Change to 256, 512, or 1024 for other runs
+LATENT_SIZE = 512  # Change to 256, 512, or 1024 for other runs
 OUTPUT_DIR = os.path.join(TASK_DIR, f"latent_{LATENT_SIZE}")
 
 # File-specific paths
