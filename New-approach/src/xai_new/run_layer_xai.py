@@ -26,7 +26,7 @@ def main():
     
     # Load test data
     test_pairs = subsample_pairs(paired_image_xml_list(config.IMG_DIR_TEST_RECT, config.XML_DIR_ALL_RECT), 
-                                 1, seed=config.SEED) # 10% of test set for speed
+                                 config.F_TEST, seed=config.SEED) 
     loader = DataLoader(GeometricShapeDataset(test_pairs, Compose([ToTensor()])), 1, collate_fn=collate_fn)
 
     print(f"Generating Layer XAI in: {out_dir}")
