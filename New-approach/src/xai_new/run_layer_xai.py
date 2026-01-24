@@ -31,7 +31,6 @@ def main():
 
     print(f"Generating Layer XAI in: {out_dir}")
     for i, (imgs, _) in enumerate(tqdm(loader)):
-        if i >= 10: break # Just do 10 images to verify it works
         
         img_id = os.path.basename(test_pairs[i][0]).split('.')[0]
         input_img = imgs[0].to(device).unsqueeze(0).requires_grad_(True)
