@@ -74,35 +74,29 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         predictions_list = model(imgs)
         pred = predictions_list[0]
         
-        # --- [FIXED] PREPARE SCORES FOR DISPLAY ---
-        # Since show_prediction doesn't take 'labels', we append scores to the class labels 
-        # in the 'pred' dictionary before passing it.
-        scores = pred['scores'].cpu().numpy()
         img_id = os.path.basename(pairs[i][0]).split('.')[0]
-        
-        # We manually update the labels inside the prediction dictionary if possible,
-        # otherwise we just rely on the terminal print for the Counterfactual proof.
+        scores = pred['scores'].cpu().numpy()
+
+        # --- COUNTERFACTUAL & SCORE LOGGING ---
         if len(scores) > 0:
             top_score = scores[0]
-            # Counterfactual Check
+            # Simple Counterfactual: Remove top-left corner
             perturbed_img = imgs[0].clone()
             perturbed_img[:, 0:40, 0:40] = 1.0 
             cf_preds = model([perturbed_img])
             cf_score = cf_preds[0]['scores'][0].item() if len(cf_preds[0]['scores']) > 0 else 0.0
-            print(f"ID {img_id} | Score: {top_score:.3f} | CF Score: {cf_score:.3f} | Drop: {top_score-cf_score:.3f}")
+            
+            # Print to terminal so you have the data even if the image fails
+            print(f"\nID {img_id} | Score: {top_score:.3f} | CF Score: {cf_score:.3f} | Drop: {top_score-cf_score:.3f}")
 
-        img_tensor = imgs[0].cpu()
-        target_dict = tgts[0]
-        output_image_path = os.path.join(output_viz_dir, f"pred_{img_id}.png")
-        
-        # We use a lower score_thr (e.g., 0.3) if you want to see the 'hidden' boxes 
-        # that XAI is highlighting in ID 5109.
+        # --- FIXING THE VISUALIZATION CRASH ---
+        # We removed the 'labels=' argument to fix the TypeError
+        # To see the 'hidden' right-most quad from ID 5109, use score_thr=0.3
         show_prediction(
-            image_tensor=img_tensor,
+            image_tensor=imgs[0].cpu(),
             pred=pred,
-            gt=target_dict,
+            gt=tgts[0],
             score_thr=0.7, 
-            save_path=output_image_path
+            save_path=os.path.join(output_viz_dir, f"pred_{img_id}.png")
         )
-
     print(f"✅ Completed visualizations for latent_{latent_dim}")
