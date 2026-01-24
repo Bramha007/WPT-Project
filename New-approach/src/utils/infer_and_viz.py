@@ -20,8 +20,7 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
     under the 'quad_detection' task directory.
     """
     
-    # 1. SETUP DYNAMIC PATHS (Task/Latent Folder Logic)
-    # This matches the 'quad_detection/latent_xxx' structure you requested
+    # 1. SETUP DYNAMIC PATHS
     device = select_device(config_det.DEVICE)
     torch.manual_seed(config_det.SEED)
     
@@ -31,12 +30,10 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
     print(f"\n--- [Visualizer] Target Task: {config_det.TASK_DIR} ---")
     print(f"--- [Visualizer] Latent Dim: {latent_dim} ---")
     
-    # Determine split tag
     tag = "rectangles" if test_on_rectangles else "squares"
     img_dir = config_det.IMG_DIR_TEST_RECT if test_on_rectangles else config_det.IMG_DIR_VAL
     xml_dir = config_det.XML_DIR_ALL_RECT if test_on_rectangles else config_det.XML_DIR_ALL
 
-    # Create visualization folder inside the latent-specific output directory
     output_viz_dir = os.path.join(config_det.OUTPUT_DIR, f"viz_{tag}")
     os.makedirs(output_viz_dir, exist_ok=True)
 
@@ -54,8 +51,7 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         num_workers=config_det.NUM_WORKERS, collate_fn=collate_fn
     )
 
-    # 3. LOAD THE MODEL WITH CORRECT LATENT DIM
-    # We must initialize with the SAME latent_dim used in training to avoid size mismatch
+    # 3. LOAD THE MODEL
     NUM_CLASSES = GeometricShapeDataset.get_num_classes()
     
     if not os.path.exists(checkpoint_path):
@@ -63,13 +59,11 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         return
 
     print(f"Loading weights from: {checkpoint_path}")
-    latent_dim = config_det.LATENT_SIZE
     model = build_fasterrcnn_(num_classes=NUM_CLASSES, latent_dim=latent_dim).to(device)
-    # model = build_fasterrcnn_(num_classes=NUM_CLASSES).to(device)
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
 
-    # 4. ITERATE AND PREDICT
+    # 4. ITERATE, PREDICT, AND PRINT SCORES
     print(f"Saving {tag} visualizations to: {output_viz_dir}")
     
     for i, (imgs, tgts) in enumerate(tqdm(val_loader, desc=f"Inference: {tag}")):
@@ -79,28 +73,38 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         predictions_list = model(imgs)
         pred = predictions_list[0]
         
+        # --- NEW: SCORE PRINTING LOGIC ---
+        # Extracts raw scores to explain 'hidden' detections seen in XAI
+        scores = pred['scores'].cpu().numpy()
+        img_id = os.path.basename(pairs[i][0]).split('.')[0]
+        
+        if len(scores) > 0:
+            # Print the top detection score to the console
+            print(f"ID {img_id} | Highest Confidence Score: {scores[0]:.4f}")
+            
+            # Identify if the top score is below your threshold
+            if scores[0] < 0.7:
+                print(f"   ⚠️  Note: This object exists but is HIDDEN in the image (Score < 0.7)")
+        else:
+            print(f"ID {img_id} | No objects detected by the model")
+
         img_tensor = imgs[0].cpu()
         target_dict = tgts[0]
         
-        original_filename = os.path.basename(pairs[i][0])
-        output_filename = f"pred_{original_filename.rsplit('.', 1)[0]}.png"
+        output_filename = f"pred_{img_id}.png"
         output_image_path = os.path.join(output_viz_dir, output_filename)
         
-        # NOTE: score_thr is set lower (0.3) so you can see red boxes 
-        # even if model confidence is low due to domain shift (Square -> Rect)
+        # Original visualization with the 0.7 threshold
         show_prediction(
             image_tensor=img_tensor,
             pred=pred,
             gt=target_dict,
             score_thr=0.7, 
-            # score_thr=0.3, 
             save_path=output_image_path
         )
 
-    print(f"✅ Completed visualizations for latent_{latent_dim}")
+    print(f"✅ Completed visualizations and score analysis for latent_{latent_dim}")
 
 if __name__ == "__main__":
-    # Test on Rectangles (Task Domain Shift)
     run_and_visualize_all(test_on_rectangles=True, limit_count=20)
-    # Test on Squares (Training Distribution)
     run_and_visualize_all(test_on_rectangles=False, limit_count=20)
