@@ -2,8 +2,8 @@ import os, torch, gc
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from captum.attr import visualization as viz
-from xai_engine import XAIEngine
-from counterfactuals import generate_geometric_counterfactual
+from src.xai_new.xai_engine import XAIEngine
+from src.xai_new.counterfactuals import generate_geometric_counterfactual
 from src.setup import config_det as config
 from src.models.fasterrcnn import build_fasterrcnn_
 from src.dataio.det_dataset import GeometricShapeDataset, collate_fn
