@@ -7,7 +7,7 @@ from src.dataio.det_dataset import GeometricShapeDataset, collate_fn
 from src.dataio.det_transforms import Compose, ToTensor
 from src.dataio.voc_parser import paired_image_xml_list
 from src.dataio.split_utils import subsample_pairs
-from xai_utils import XAIEngine, save_report
+from src.xai_new.xai_utils import XAIEngine, save_report
 
 def run_suite(latent_size=256, limit=20):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
