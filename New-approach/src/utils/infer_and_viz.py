@@ -14,7 +14,7 @@ from src.dataio.split_utils import subsample_pairs
 from src.models.fasterrcnn import build_fasterrcnn_
 
 @torch.inference_mode()
-def run_and_visualize_full_splits(test_on_rectangles: bool = True):
+def run_and_visualize_all(test_on_rectangles: bool = True):
     """
     Visualizes the EXACT number of images defined in the training configuration
     for the test/validation sets.
@@ -82,6 +82,7 @@ def run_and_visualize_full_splits(test_on_rectangles: bool = True):
     print(f"✅ Completed full split visualization for latent_{latent_dim}")
 
 if __name__ == "__main__":
+    pass
     # Remove limit_count to process all images defined by F_TEST in config
-    run_and_visualize_full_splits(test_on_rectangles=True)
-    run_and_visualize_full_splits(test_on_rectangles=False)
+    # run_and_visualize_full_splits(test_on_rectangles=True)
+    # run_and_visualize_full_splits(test_on_rectangles=False)
