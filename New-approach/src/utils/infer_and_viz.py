@@ -1,5 +1,6 @@
 import torch
 import os
+import numpy as np
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 
@@ -20,7 +21,7 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
     under the 'quad_detection' task directory.
     """
     
-    # 1. SETUP DYNAMIC PATHS
+    # 1. SETUP DYNAMIC PATHS (Task/Latent Folder Logic)
     device = select_device(config_det.DEVICE)
     torch.manual_seed(config_det.SEED)
     
@@ -30,10 +31,12 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
     print(f"\n--- [Visualizer] Target Task: {config_det.TASK_DIR} ---")
     print(f"--- [Visualizer] Latent Dim: {latent_dim} ---")
     
+    # Determine split tag
     tag = "rectangles" if test_on_rectangles else "squares"
     img_dir = config_det.IMG_DIR_TEST_RECT if test_on_rectangles else config_det.IMG_DIR_VAL
     xml_dir = config_det.XML_DIR_ALL_RECT if test_on_rectangles else config_det.XML_DIR_ALL
 
+    # Create visualization folder inside the latent-specific output directory
     output_viz_dir = os.path.join(config_det.OUTPUT_DIR, f"viz_{tag}")
     os.makedirs(output_viz_dir, exist_ok=True)
 
@@ -51,7 +54,7 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         num_workers=config_det.NUM_WORKERS, collate_fn=collate_fn
     )
 
-    # 3. LOAD THE MODEL
+    # 3. LOAD THE MODEL WITH CORRECT LATENT DIM
     NUM_CLASSES = GeometricShapeDataset.get_num_classes()
     
     if not os.path.exists(checkpoint_path):
@@ -63,7 +66,7 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
 
-    # 4. ITERATE, PREDICT, AND PRINT SCORES
+    # 4. ITERATE AND PREDICT
     print(f"Saving {tag} visualizations to: {output_viz_dir}")
     
     for i, (imgs, tgts) in enumerate(tqdm(val_loader, desc=f"Inference: {tag}")):
@@ -73,20 +76,23 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         predictions_list = model(imgs)
         pred = predictions_list[0]
         
-        # --- NEW: SCORE PRINTING LOGIC ---
-        # Extracts raw scores to explain 'hidden' detections seen in XAI
+        # --- [NEW] PREPARE SCORES FOR DISPLAY ---
         scores = pred['scores'].cpu().numpy()
         img_id = os.path.basename(pairs[i][0]).split('.')[0]
         
+        # Format scores to be printed on the images
+        # This explains why the right-most shape in ID 5109 might be 'hidden'
+        custom_labels = [f"Conf: {s:.3f}" for s in scores]
+
+        # --- [NEW] COUNTERFACTUAL CHECK ---
         if len(scores) > 0:
-            # Print the top detection score to the console
-            print(f"ID {img_id} | Highest Confidence Score: {scores[0]:.4f}")
-            
-            # Identify if the top score is below your threshold
-            if scores[0] < 0.7:
-                print(f"   ⚠️  Note: This object exists but is HIDDEN in the image (Score < 0.7)")
-        else:
-            print(f"ID {img_id} | No objects detected by the model")
+            with torch.no_grad():
+                perturbed_img = imgs[0].clone()
+                # Remove a corner to see if geometry matters
+                perturbed_img[:, 0:40, 0:40] = 1.0 
+                cf_preds = model([perturbed_img])
+                cf_score = cf_preds[0]['scores'][0].item() if len(cf_preds[0]['scores']) > 0 else 0.0
+                print(f"ID {img_id} | Orig Score: {scores[0]:.3f} | CF Score: {cf_score:.3f} | Drop: {scores[0]-cf_score:.3f}")
 
         img_tensor = imgs[0].cpu()
         target_dict = tgts[0]
@@ -94,17 +100,20 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         output_filename = f"pred_{img_id}.png"
         output_image_path = os.path.join(output_viz_dir, output_filename)
         
-        # Original visualization with the 0.7 threshold
+        # Pass score_labels to print the confidence values directly on the image
         show_prediction(
             image_tensor=img_tensor,
             pred=pred,
             gt=target_dict,
             score_thr=0.7, 
+            labels=custom_labels, 
             save_path=output_image_path
         )
 
     print(f"✅ Completed visualizations and score analysis for latent_{latent_dim}")
 
 if __name__ == "__main__":
+    # Test on Rectangles (Task Domain Shift)
     run_and_visualize_all(test_on_rectangles=True, limit_count=20)
+    # Test on Squares (Training Distribution)
     run_and_visualize_all(test_on_rectangles=False, limit_count=20)
