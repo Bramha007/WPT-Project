@@ -1,40 +1,69 @@
 import os, torch, gc
-import matplotlib.pyplot as plt
 from tqdm import tqdm
-from captum.attr import visualization as viz
-from src.xai_new.xai_engine import XAIEngine
-from src.xai_new.counterfactuals import generate_geometric_counterfactual
+from torch.utils.data import DataLoader
+
+# Project Imports
 from src.setup import config_det as config
 from src.models.fasterrcnn import build_fasterrcnn_
 from src.dataio.det_dataset import GeometricShapeDataset, collate_fn
 from src.dataio.det_transforms import Compose, ToTensor
 from src.dataio.voc_parser import paired_image_xml_list
 from src.dataio.split_utils import subsample_pairs
+from xai_utils import XAIEngine, save_report
 
-def main():
+def run_suite(latent_size=256, limit=15):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = build_fasterrcnn_(2, config.LATENT_SIZE).to(device)
-    model.load_state_dict(torch.load(config.SAVE_CKPT, map_location=device))
     
+    # 1. Setup Paths manually to avoid 'None' errors
+    ckpt_path = f"quad_detection/latent_{latent_size}/fasterrcnn_best.pt"
+    save_dir = f"quad_detection/latent_{latent_size}/xai_results"
+    os.makedirs(save_dir, exist_ok=True)
+    
+    print(f"📂 Saving results to: {os.path.abspath(save_dir)}")
+
+    # 2. Load Model
+    model = build_fasterrcnn_(2, latent_size).to(device)
+    model.load_state_dict(torch.load(ckpt_path, map_location=device))
+    model.eval()
+
+    # 3. Data Prep
+    test_pairs = subsample_pairs(
+        paired_image_xml_list(config.IMG_DIR_TEST_RECT, config.XML_DIR_ALL_RECT), 
+        config.F_TEST, seed=config.SEED
+    )
+    ds = GeometricShapeDataset(test_pairs, transforms=Compose([ToTensor()]))
+    loader = DataLoader(ds, batch_size=1, shuffle=False, collate_fn=collate_fn)
+
     engine = XAIEngine(model, device)
-    test_pairs = subsample_pairs(paired_image_xml_list(config.IMG_DIR_TEST_RECT, config.XML_DIR_ALL_RECT), 
-                                 config.F_TEST, seed=config.SEED)
-    
-    for i in tqdm(range(10)): # Run on first 10 test images
-        img, _ = GeometricShapeDataset([test_pairs[i]], transforms=Compose([ToTensor()]))[0]
-        input_img = img.unsqueeze(0).to(device).requires_grad_(True)
+
+    for i, (imgs, _) in enumerate(tqdm(loader)):
+        if i >= limit: break
         
-        # 1. Pixel Attribution
-        attr_ig = engine.attribute_pixel(input_img)
-        # 2. Counterfactual check
-        orig_s, cf_s, _ = generate_geometric_counterfactual(model, img.unsqueeze(0), device)
+        img_id = os.path.basename(test_pairs[i][0]).split('.')[0].replace('img_', '')
+        input_img = imgs[0].to(device).unsqueeze(0).requires_grad_(True)
         
-        # Visual Summary
-        print(f"ID {i} | Conf: {orig_s:.2f} | CF (Corner Removed): {cf_s:.2f}")
+        try:
+            # Run Attributions
+            attr_ig, attr_lgc = engine.run_attributions(input_img)
+            
+            # Counterfactual Logic: Remove corner
+            with torch.no_grad():
+                orig_score = model([input_img.squeeze(0)])[0]['scores'][0].item()
+                perturbed = input_img.clone()
+                perturbed[:, :, 0:30, 0:30] = 1.0 # White out top-left corner
+                cf_score = model([perturbed.squeeze(0)])[0]['scores'][0].item()
+
+            # Save Plot
+            save_report(input_img, attr_ig, attr_lgc, [orig_score, cf_score], img_id, save_dir)
+            
+        except Exception as e:
+            print(f"Skipping ID {img_id} due to error: {e}")
         
-        # Save visualization logic here using viz.visualize_image_attr...
-        torch.cuda.empty_cache()
-        gc.collect()
+        if i % 2 == 0: torch.cuda.empty_cache()
+
+    print(f"\n✅ Finished! Run this on your Windows machine to pull results:")
+    print(f"scp -r {os.getlogin()}@gensynth.cs.uni-magdeburg.de:{os.path.abspath(save_dir)} E:\\WPT-Project\\New-approach\\results_linux\\quad_detection\\latent_{latent_size}\\")
 
 if __name__ == "__main__":
-    main()
+    # Run for the latent size you want to explain
+    run_suite(latent_size=256)
