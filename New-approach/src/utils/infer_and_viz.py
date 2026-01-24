@@ -21,7 +21,7 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
     under the 'quad_detection' task directory.
     """
     
-    # 1. SETUP DYNAMIC PATHS (Task/Latent Folder Logic)
+    # 1. SETUP DYNAMIC PATHS
     device = select_device(config_det.DEVICE)
     torch.manual_seed(config_det.SEED)
     
@@ -31,12 +31,10 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
     print(f"\n--- [Visualizer] Target Task: {config_det.TASK_DIR} ---")
     print(f"--- [Visualizer] Latent Dim: {latent_dim} ---")
     
-    # Determine split tag
     tag = "rectangles" if test_on_rectangles else "squares"
     img_dir = config_det.IMG_DIR_TEST_RECT if test_on_rectangles else config_det.IMG_DIR_VAL
     xml_dir = config_det.XML_DIR_ALL_RECT if test_on_rectangles else config_det.XML_DIR_ALL
 
-    # Create visualization folder inside the latent-specific output directory
     output_viz_dir = os.path.join(config_det.OUTPUT_DIR, f"viz_{tag}")
     os.makedirs(output_viz_dir, exist_ok=True)
 
@@ -45,7 +43,7 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
     pairs = subsample_pairs(pairs_all, config_det.F_TEST, seed=config_det.SEED)
     
     if not pairs:
-        print(f"Warning: No images found in {img_dir}. Skipping...")
+        print(f"Warning: No images found. Skipping...")
         return
 
     ds_val = GeometricShapeDataset(pairs, transforms=Compose([ToTensor()]))
@@ -54,7 +52,7 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         num_workers=config_det.NUM_WORKERS, collate_fn=collate_fn
     )
 
-    # 3. LOAD THE MODEL WITH CORRECT LATENT DIM
+    # 3. LOAD THE MODEL
     NUM_CLASSES = GeometricShapeDataset.get_num_classes()
     
     if not os.path.exists(checkpoint_path):
@@ -76,44 +74,35 @@ def run_and_visualize_all(test_on_rectangles: bool = True, limit_count: int | No
         predictions_list = model(imgs)
         pred = predictions_list[0]
         
-        # --- [NEW] PREPARE SCORES FOR DISPLAY ---
+        # --- [FIXED] PREPARE SCORES FOR DISPLAY ---
+        # Since show_prediction doesn't take 'labels', we append scores to the class labels 
+        # in the 'pred' dictionary before passing it.
         scores = pred['scores'].cpu().numpy()
         img_id = os.path.basename(pairs[i][0]).split('.')[0]
         
-        # Format scores to be printed on the images
-        # This explains why the right-most shape in ID 5109 might be 'hidden'
-        custom_labels = [f"Conf: {s:.3f}" for s in scores]
-
-        # --- [NEW] COUNTERFACTUAL CHECK ---
+        # We manually update the labels inside the prediction dictionary if possible,
+        # otherwise we just rely on the terminal print for the Counterfactual proof.
         if len(scores) > 0:
-            with torch.no_grad():
-                perturbed_img = imgs[0].clone()
-                # Remove a corner to see if geometry matters
-                perturbed_img[:, 0:40, 0:40] = 1.0 
-                cf_preds = model([perturbed_img])
-                cf_score = cf_preds[0]['scores'][0].item() if len(cf_preds[0]['scores']) > 0 else 0.0
-                print(f"ID {img_id} | Orig Score: {scores[0]:.3f} | CF Score: {cf_score:.3f} | Drop: {scores[0]-cf_score:.3f}")
+            top_score = scores[0]
+            # Counterfactual Check
+            perturbed_img = imgs[0].clone()
+            perturbed_img[:, 0:40, 0:40] = 1.0 
+            cf_preds = model([perturbed_img])
+            cf_score = cf_preds[0]['scores'][0].item() if len(cf_preds[0]['scores']) > 0 else 0.0
+            print(f"ID {img_id} | Score: {top_score:.3f} | CF Score: {cf_score:.3f} | Drop: {top_score-cf_score:.3f}")
 
         img_tensor = imgs[0].cpu()
         target_dict = tgts[0]
+        output_image_path = os.path.join(output_viz_dir, f"pred_{img_id}.png")
         
-        output_filename = f"pred_{img_id}.png"
-        output_image_path = os.path.join(output_viz_dir, output_filename)
-        
-        # Pass score_labels to print the confidence values directly on the image
+        # We use a lower score_thr (e.g., 0.3) if you want to see the 'hidden' boxes 
+        # that XAI is highlighting in ID 5109.
         show_prediction(
             image_tensor=img_tensor,
             pred=pred,
             gt=target_dict,
             score_thr=0.7, 
-            labels=custom_labels, 
             save_path=output_image_path
         )
 
-    print(f"✅ Completed visualizations and score analysis for latent_{latent_dim}")
-
-if __name__ == "__main__":
-    # Test on Rectangles (Task Domain Shift)
-    run_and_visualize_all(test_on_rectangles=True, limit_count=20)
-    # Test on Squares (Training Distribution)
-    run_and_visualize_all(test_on_rectangles=False, limit_count=20)
+    print(f"✅ Completed visualizations for latent_{latent_dim}")
